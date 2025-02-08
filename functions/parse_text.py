@@ -5,5 +5,5 @@ def parse_ocr_text(ocr_text):
     if not isinstance(ocr_text, str):
         return []
     
-    cleaned_text = " ".join(ocr_text.split())  # 개행 및 공백 제거
+    cleaned_text = ocr_text.replace("\n", "").replace(" ", "")  # 개행 및 공백 제거
     return cleaned_text.split("|||")  # '|||' 기준으로 분할
