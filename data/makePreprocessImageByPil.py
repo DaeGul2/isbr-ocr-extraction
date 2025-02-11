@@ -10,14 +10,11 @@ def preprocess_image(image_path, save_path):
         # 이미지 열기 및 흑백 변환 (Grayscale)
         img = Image.open(image_path)
 
-        # 대비 조정 (텍스트 강조)
-        img = ImageEnhance.Contrast(img).enhance(1.2)  # 대비 1.5배 증가
 
         # 선명화 적용 (텍스트를 또렷하게)
         img = ImageEnhance.Sharpness(img).enhance(2.0)  # 선명도 2배 증가
 
-        # 가벼운 노이즈 제거 (부드럽게 처리)
-        img = img.filter(ImageFilter.SMOOTH)
+        
 
         # 전처리된 이미지 저장
         img.save(save_path)

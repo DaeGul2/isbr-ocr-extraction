@@ -1,33 +1,28 @@
+from functions.extractors.extract_dungbon import extract_info_from_dungbon
+from functions.extractors.extract_chobon import extract_info_from_chobon
+from functions.extractors.extract_health_insurance import extract_info_from_health_insurance
+from functions.extractors.extract_national_pension import extract_info_from_national_pension
+from functions.extractors.extract_toeic import extract_info_from_toeic
+from functions.extractors.extract_toss import extract_info_from_toss
+from functions.extractors.extract_transcript import extract_info_from_transcript
+from functions.extractors.extract_graduation import extract_info_from_graduation
+
 def handle_document(doc_type, name, text):
     """
     문서 유형에 따라 필요한 데이터를 추출.
     """
-    result = {
-        "등본_자격번호": [], "등본_발급날짜": [], "초본_자격번호": [], "초본_발급날짜": [],
-        "건강보험자격득실_번호_건보": [], "건강보험자격득실_번호_정부24": [], 
-        "국민연금가입자증명_번호_국민연금": [], "국민연금가입자증명_번호_정부24": [],
-        "토익_수험번호": [], "토익_발급번호": [], "토스_수험번호": [], "토스_발급번호": [],
-        "성적증명_문서확인번호": [], "성적증명_추정발급일": [], "대학교": []
+    extractors = {
+        "등본": extract_info_from_dungbon,
+        "초본": extract_info_from_chobon,
+        "건강보험자격득실_건보": extract_info_from_health_insurance,
+        "건강보험자격득실_정부24": extract_info_from_health_insurance,
+        "국민연금가입자증명_국민연금": extract_info_from_national_pension,
+        "국민연금가입자증명_정부24": extract_info_from_national_pension,
+        "토익": extract_info_from_toeic,
+        "토스": extract_info_from_toss,
+        "성적증명서": extract_info_from_transcript,
+        "졸업증명서":extract_info_from_graduation,
     }
 
-    if doc_type == "등본":
-        # 등본 관련 정보 추출 (예: 정규표현식으로 4-4-4-4 형식 찾기)
-        pass  
-    elif doc_type == "초본":
-        pass  
-    elif doc_type == "건강보험자격득실_건보":
-        pass  
-    elif doc_type == "건강보험자격득실_정부24":
-        pass  
-    elif doc_type == "국민연금가입자증명_국민연금":
-        pass  
-    elif doc_type == "국민연금가입자증명_정부24":
-        pass  
-    elif doc_type == "토익":
-        pass  
-    elif doc_type == "토스":
-        pass  
-    elif doc_type == "성적증명서":
-        pass  
-
-    return result
+    # 문서 유형이 정의된 경우 해당 함수 실행, 없으면 빈 딕셔너리 반환
+    return extractors.get(doc_type, lambda n, t: {})(name, text)

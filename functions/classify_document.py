@@ -6,7 +6,7 @@ def classify_document(text):
     # 등본의 특징적인 단어
     
     
-    if "등록표" in text:
+    if "주민등록표" in text:
         if "등본" in text or "세대별주민" in text:
             return "등본"
         else:
@@ -25,4 +25,6 @@ def classify_document(text):
             return "토익"
     if "성적" in text and ("학점" in text or "문서확인번호" in text or "transcript" in text):
         return "성적증명서"
+    if "졸업" in text :
+        return "졸업증명서"
     return None
