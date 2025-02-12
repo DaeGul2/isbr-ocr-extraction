@@ -35,7 +35,7 @@ def extract_info_from_grade(name, text):
         "성적증명_추정발급일": []
     }
 
-     # 🔹 'internet' 포함 여부는 소문자로 변환해서 체크
+    # 🔹 'internet' 포함 여부는 소문자로 변환해서 체크
     check_text = text.lower()
 
     # 🔹 'internet'이 포함되면 No) 숫자 패턴 찾기 (원본 text 사용)
@@ -43,17 +43,39 @@ def extract_info_from_grade(name, text):
         pattern_no = r"(?:No\)|no\)|nO\)|NO\))\s*(\d+)"
         match_no = re.findall(pattern_no, text)  # 원본 text에서 찾기
         if match_no:
-            result["성적증명_문서확인번호"].extend(match_no)
-    
-    # 🔹 'internet'이 포함되지 않으면 4-4-4-4 패턴 찾기 (원본 text 사용)
-    else:
-        pattern_4x4 = r"[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}"
-        match_4x4 = re.findall(pattern_4x4, text)  # 원본 text에서 찾기
-        if match_4x4:
-            if len(match_4x4)>1:
-                result["성적증명_문서확인번호"].append(match_4x4[0])    
+            if len(match_no)>1:
+                result["성적증명_문서확인번호"].append(match_no[-1])
             else:
-                result["성적증명_문서확인번호"].extend(match_4x4)
+                result["성적증명_문서확인번호"].extend(match_no)
+    
+    else:
+        # 🔹 '원본확인번호'가 있으면 4-5-4-5 패턴 찾기
+        if "원본확인번호" in text:
+            pattern_4x5 = r"[A-Za-z0-9]{4}-[A-Za-z0-9]{5}-[A-Za-z0-9]{4}-[A-Za-z0-9]{5}"
+            match_4x5 = re.findall(pattern_4x5, text)
+            
+            # o/O를 0으로 변환
+            match_4x5 = [m.replace('o', '0').replace('O', '0') for m in match_4x5]
+            
+            if match_4x5:
+                if len(match_4x5)>1:
+                    result["성적증명_문서확인번호"].append(match_4x5[0])
+                else:
+                    result["성적증명_문서확인번호"].extend(match_4x5)
+        
+        # 🔹 '원본확인번호'가 없으면 기존 4-4-4-4 패턴 찾기
+        else:
+            pattern_4x4 = r"[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}"
+            match_4x4 = re.findall(pattern_4x4, text)
+            
+            # o/O를 0으로 변환
+            match_4x4 = [m.replace('o', '0').replace('O', '0') for m in match_4x4]
+            
+            if match_4x4:
+                if len(match_4x4) > 1:
+                    result["성적증명_문서확인번호"].append(match_4x4[0])
+                else:
+                    result["성적증명_문서확인번호"].extend(match_4x4)
 
     # 🔹 발급 날짜 찾기 (가장 최근 날짜만 저장)
     latest_issue_date = extract_latest_issue_date(text)
@@ -61,6 +83,7 @@ def extract_info_from_grade(name, text):
         result["성적증명_추정발급일"].append(latest_issue_date)
 
     return result
+
 
 # ✅ 입력 및 출력 파일 경로
 input_file = "./grade_input.xlsx"
