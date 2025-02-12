@@ -2,6 +2,11 @@ import os
 import re
 import pandas as pd
 
+
+uni_file_path = "../../data/university_list.xlsx"
+uni_df = pd.read_excel(uni_file_path)
+university_list = uni_df["학교명"].dropna().tolist()
+
 # ✅ 최신 날짜 찾기 함수 (일 단위 변환 + max 적용)
 def extract_latest_issue_date(text):
     """
@@ -58,7 +63,8 @@ def extract_info_from_grade(name, text):
     """
     result = {
         "졸업증명_문서확인번호": [],
-        "졸업증명_추정발급일": []
+        "졸업증명_추정발급일": [],
+        "졸업증명_대학교": []
     }
 
     # 🔹 'internet' 포함 여부는 소문자로 변환해서 체크
@@ -125,6 +131,10 @@ def extract_info_from_grade(name, text):
     latest_issue_date = extract_latest_issue_date(text)
     if latest_issue_date:
         result["졸업증명_추정발급일"].append(latest_issue_date)
+    for uni in university_list:
+        if uni in text:
+            result["졸업증명_대학교"].append(uni)
+            break
 
     return result
 
@@ -137,7 +147,7 @@ output_file = "./test_graduation_output.xlsx"
 df = pd.read_excel(input_file)
 
 # ✅ 결과를 저장할 데이터프레임 생성 (출력 컬럼 맞추기)
-output_columns = ["파일명", "졸업증명_문서확인번호", "졸업증명_추정발급일"]
+output_columns = ["파일명", "졸업증명_문서확인번호", "졸업증명_추정발급일","졸업증명_대학교"]
 results_df = pd.DataFrame(columns=output_columns)
 
 # ✅ 첫 번째 행(컬럼명) 제외, 각 행별 OCR 추출
@@ -155,7 +165,8 @@ for index, row in df.iterrows():
     new_row = pd.DataFrame({
         "파일명": [filename],
         "졸업증명_문서확인번호": [", ".join(extracted_data["졸업증명_문서확인번호"]) if extracted_data["졸업증명_문서확인번호"] else ""],
-        "졸업증명_추정발급일": [", ".join(extracted_data["졸업증명_추정발급일"]) if extracted_data["졸업증명_추정발급일"] else ""]
+        "졸업증명_추정발급일": [", ".join(extracted_data["졸업증명_추정발급일"]) if extracted_data["졸업증명_추정발급일"] else ""],
+        "졸업증명_대학교": [", ".join(extracted_data["졸업증명_대학교"]) if extracted_data["졸업증명_대학교"] else ""],
     })
 
     results_df = pd.concat([results_df, new_row], ignore_index=True)
