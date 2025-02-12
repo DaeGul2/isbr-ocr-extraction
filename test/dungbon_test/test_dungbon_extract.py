@@ -2,26 +2,51 @@ import os
 import re
 import pandas as pd
 
-# ✅ 최신 발급 날짜 찾기 함수
 def extract_latest_issue_date(text):
     """
-    OCR 텍스트에서 가장 최근 발급 날짜를 찾는 함수.
+    OCR 텍스트에서 가장 최신 발급 날짜를 찾는 함수.
     """
-    # 1️⃣ 일반 날짜 포맷 (YYYY.MM.DD, YYYY/MM/DD, YYYY-MM-DD)
-    pattern1 = r"\d{4}[./-]\d{2}[./-]\d{2}"
-    
-    # 2️⃣ 한글 포함 날짜 포맷 (YYYY년MM월DD일)
-    pattern2 = r"\d{4}년\d{1,2}월\d{1,2}일"
-    
-    # 🔹 모든 날짜 찾기
-    matches = re.findall(f"{pattern1}|{pattern2}", text)
-    
-    # 🔹 날짜 변환 & 최신 날짜 찾기
-    if matches:
-        # 날짜 포맷 통일 (YYYY-MM-DD 형식으로 변환)
-        formatted_dates = [re.sub(r"[년월]", "-", date).replace("일", "") for date in matches]
-        latest_date = max(formatted_dates)  # 가장 최신 날짜 찾기
-        return latest_date
+    # 1️⃣ YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD (월/일 2자리)
+    pattern1 = r"(\d{4})[./-](\d{2})[./-](\d{2})"
+
+    # 2️⃣ YYYY-M-DD, YYYY/M/DD, YYYY.M.DD (월 1자리, 일 2자리)
+    pattern2 = r"(\d{4})[./-](\d{1})[./-](\d{2})"
+
+    # 3️⃣ YYYY-MM-D, YYYY/MM/D, YYYY.MM.D (월 2자리, 일 1자리)
+    pattern3 = r"(\d{4})[./-](\d{2})[./-](\d{1})"
+
+    # 4️⃣ YYYY-M-D, YYYY/M/D, YYYY.M.D (월/일 모두 1자리)
+    pattern4 = r"(\d{4})[./-](\d{1})[./-](\d{1})"
+
+    # 5️⃣ 한글 포함 YYYY년 MM월 DD일, YYYY년 M월 D일 등
+    pattern5 = r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일"
+
+    # 🔹 모든 패턴에서 날짜 찾기
+    matches = (
+        re.findall(pattern1, text)
+        + re.findall(pattern2, text)
+        + re.findall(pattern3, text)
+        + re.findall(pattern4, text)
+        + re.findall(pattern5, text)
+    )
+
+    # 🔹 날짜 변환 및 최신 날짜 찾기
+    parsed_dates = []
+    date_values = []
+    for match in matches:
+        try:
+            year, month, day = int(match[0]), int(match[1]), int(match[2])
+            days_since_start = year * 365 + month * 30 + day  # 날짜를 일수로 변환하여 비교
+            parsed_dates.append((year, month, day))
+            date_values.append(days_since_start)
+        except Exception as e:
+            print(f"⚠️ 날짜 변환 오류 발생: {match} → {e}")
+
+    # 🔹 최신 날짜 찾기 (max 적용)
+    if parsed_dates:
+        latest_idx = date_values.index(max(date_values))  # 가장 큰 값을 가진 인덱스 찾기
+        latest_year, latest_month, latest_day = parsed_dates[latest_idx]
+        return f"{latest_year}-{latest_month:02d}-{latest_day:02d}"  # YYYY-MM-DD 포맷으로 반환
 
     return None  # 날짜를 찾지 못한 경우
 

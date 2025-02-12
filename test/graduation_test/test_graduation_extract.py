@@ -2,7 +2,7 @@ import os
 import re
 import pandas as pd
 
-# ✅ 최신 발급 날짜 찾기 함수
+# ✅ 최신 날짜 찾기 함수 (일 단위 변환 + max 적용)
 def extract_latest_issue_date(text):
     """
     OCR 텍스트에서 가장 최신 발급 날짜를 찾는 함수.
@@ -51,30 +51,34 @@ def extract_latest_issue_date(text):
 
     return None  # 날짜를 찾지 못한 경우
 
-# ✅ 성적증명서 문서확인번호 추출 함수
+# ✅ 졸업증명서 문서확인번호 추출 함수
 def extract_info_from_grade(name, text):
     """
-    성적증명서에서 문서확인번호와 발급일을 추출
+    졸업증명서에서 문서확인번호와 발급일을 추출
     """
     result = {
-        "성적증명_문서확인번호": [],
-        "성적증명_추정발급일": []
+        "졸업증명_문서확인번호": [],
+        "졸업증명_추정발급일": []
     }
 
     # 🔹 'internet' 포함 여부는 소문자로 변환해서 체크
     check_text = text.lower()
+
     text = text.replace('·','')
     text = text.replace('--','-')
    
+
+    
+
     # 🔹 'internet'이 포함되면 No) 숫자 패턴 찾기 (원본 text 사용)
     if "internet" in check_text:
         pattern_no = r"(?:No\)|no\)|nO\)|NO\))\s*(\d+)"
         match_no = re.findall(pattern_no, text)  # 원본 text에서 찾기
         if match_no:
             if len(match_no)>1:
-                result["성적증명_문서확인번호"].append(match_no[-1])
+                result["졸업증명_문서확인번호"].append(match_no[-1])
             else:
-                result["성적증명_문서확인번호"].extend(match_no)
+                result["졸업증명_문서확인번호"].extend(match_no)
     
     else:
         pattern_4x5_without_wonbon = r"[A-Za-z0-9]{4}-[A-Za-z0-9]{5}-[A-Za-z0-9]{4}-[A-Za-z0-9]{5}"
@@ -83,6 +87,7 @@ def extract_info_from_grade(name, text):
         # o/O를 0으로 변환
         match_4x5_without_wonbon = [m.replace('o', '0').replace('O', '0') for m in match_4x5_without_wonbon]
         # 🔹 '원본확인번호'가 있으면 4-5-4-5 패턴 찾기
+
         if "원본확인번호" in text:
             pattern_4x5 = r"[A-Za-z0-9]{4}-[A-Za-z0-9]{5}-[A-Za-z0-9]{4}-[A-Za-z0-9]{5}"
             match_4x5 = re.findall(pattern_4x5, text)
@@ -92,17 +97,17 @@ def extract_info_from_grade(name, text):
             
             if match_4x5:
                 if len(match_4x5)>1:
-                    result["성적증명_문서확인번호"].append(match_4x5[0])
+                    result["졸업증명_문서확인번호"].append(match_4x5[0])
                 else:
-                    result["성적증명_문서확인번호"].extend(match_4x5)
+                    result["졸업증명_문서확인번호"].extend(match_4x5)
         
         # 🔹 '원본확인번호'가 없으면 기존 4-4-4-4 패턴 찾기
         elif match_4x5_without_wonbon:
             if match_4x5_without_wonbon:
                 if len(match_4x5_without_wonbon)>1:
-                    result["성적증명_문서확인번호"].append(match_4x5_without_wonbon[0])
+                    result["졸업증명_문서확인번호"].append(match_4x5_without_wonbon[0])
                 else:
-                    result["성적증명_문서확인번호"].extend(match_4x5_without_wonbon)
+                    result["졸업증명_문서확인번호"].extend(match_4x5_without_wonbon)
         else:
             pattern_4x4 = r"[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}"
             match_4x4 = re.findall(pattern_4x4, text)
@@ -112,27 +117,27 @@ def extract_info_from_grade(name, text):
             
             if match_4x4:
                 if len(match_4x4) > 1:
-                    result["성적증명_문서확인번호"].append(match_4x4[0])
+                    result["졸업증명_문서확인번호"].append(match_4x4[0])
                 else:
-                    result["성적증명_문서확인번호"].extend(match_4x4)
+                    result["졸업증명_문서확인번호"].extend(match_4x4)
 
     # 🔹 발급 날짜 찾기 (가장 최근 날짜만 저장)
     latest_issue_date = extract_latest_issue_date(text)
     if latest_issue_date:
-        result["성적증명_추정발급일"].append(latest_issue_date)
+        result["졸업증명_추정발급일"].append(latest_issue_date)
 
     return result
 
 
 # ✅ 입력 및 출력 파일 경로
-input_file = "./grade_input.xlsx"
-output_file = "./test_grade_output.xlsx"
+input_file = "./graduation_input.xlsx"
+output_file = "./test_graduation_output.xlsx"
 
 # ✅ 엑셀 파일 읽기
 df = pd.read_excel(input_file)
 
 # ✅ 결과를 저장할 데이터프레임 생성 (출력 컬럼 맞추기)
-output_columns = ["파일명", "성적증명_문서확인번호", "성적증명_추정발급일"]
+output_columns = ["파일명", "졸업증명_문서확인번호", "졸업증명_추정발급일"]
 results_df = pd.DataFrame(columns=output_columns)
 
 # ✅ 첫 번째 행(컬럼명) 제외, 각 행별 OCR 추출
@@ -143,14 +148,14 @@ for index, row in df.iterrows():
     # 🔹 파일명에서 확장자 제거
     filename = os.path.splitext(filename)[0]
 
-    # ✅ 성적증명서 추출 함수 실행
+    # ✅ 졸업증명서 추출 함수 실행
     extracted_data = extract_info_from_grade(None, text)
 
     # ✅ 결과 데이터프레임에 추가
     new_row = pd.DataFrame({
         "파일명": [filename],
-        "성적증명_문서확인번호": [", ".join(extracted_data["성적증명_문서확인번호"]) if extracted_data["성적증명_문서확인번호"] else ""],
-        "성적증명_추정발급일": [", ".join(extracted_data["성적증명_추정발급일"]) if extracted_data["성적증명_추정발급일"] else ""]
+        "졸업증명_문서확인번호": [", ".join(extracted_data["졸업증명_문서확인번호"]) if extracted_data["졸업증명_문서확인번호"] else ""],
+        "졸업증명_추정발급일": [", ".join(extracted_data["졸업증명_추정발급일"]) if extracted_data["졸업증명_추정발급일"] else ""]
     })
 
     results_df = pd.concat([results_df, new_row], ignore_index=True)
@@ -163,4 +168,4 @@ results_df["파일명"] = results_df["파일명"].astype(str)  # 다시 문자�
 # ✅ 결과 엑셀 파일 저장
 results_df.to_excel(output_file, index=False)
 
-print(f"✅ 성적증명서 추출 테스트 완료! 결과가 {output_file}에 저장되었습니다.")
+print(f"✅ 졸업증명서 추출 테스트 완료! 결과가 {output_file}에 저장되었습니다.")
