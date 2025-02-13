@@ -6,4 +6,4 @@ def parse_ocr_text(ocr_text):
         return []
     
     cleaned_text = ocr_text.replace("\n", "").replace(" ", "")  # 개행 및 공백 제거
-    return cleaned_text.split("|||")  # '|||' 기준으로 분할
+    return cleaned_text.split("|||분리|||")  # '|||' 기준으로 분할

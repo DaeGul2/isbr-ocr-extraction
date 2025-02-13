@@ -67,7 +67,7 @@ def extract_info_from_chobon( text):
         
         "초본_확인번호": [],
         "초본_발급날짜": [],
-        "생년월일6자리_초본": []
+        "초본_생년월일6자리": []
     }
 
     text = text.replace(" ", "")  # OCR 오류 방지
@@ -86,7 +86,7 @@ def extract_info_from_chobon( text):
     # 🔹 특정 name과 연결된 주민등록번호에서 앞 6자리 추출
     birth_date = extract_birth_date_from_text(text)
     if birth_date:
-        result["생년월일6자리_초본"].append(birth_date)
+        result["초본_생년월일6자리"].append(birth_date)
 
     return result
 
@@ -98,7 +98,7 @@ output_file = "./test_chobon_output.xlsx"
 df = pd.read_excel(input_file)
 
 # ✅ 결과를 저장할 데이터프레임 생성 (출력 컬럼 맞추기)
-output_columns = ["이름", "초본_확인번호", "초본_발급날짜", "생년월일6자리_초본"]
+output_columns = ["이름", "초본_확인번호", "초본_발급날짜", "초본_생년월일6자리"]
 results_df = pd.DataFrame(columns=output_columns)
 
 # ✅ 첫 번째 행(컬럼명) 제외, 각 행별 OCR 추출
@@ -114,7 +114,7 @@ for index, row in df.iterrows():
         "파일명":file_name,
         "초본_확인번호": [", ".join(extracted_data["초본_확인번호"]) if extracted_data["초본_확인번호"] else ""],
         "초본_발급날짜": [", ".join(extracted_data["초본_발급날짜"]) if extracted_data["초본_발급날짜"] else ""],
-        "생년월일6자리_초본": [", ".join(extracted_data["생년월일6자리_초본"]) if extracted_data["생년월일6자리_초본"] else ""]
+        "초본_생년월일6자리": [", ".join(extracted_data["초본_생년월일6자리"]) if extracted_data["초본_생년월일6자리"] else ""]
     })
 
     results_df = pd.concat([results_df, new_row], ignore_index=True)
