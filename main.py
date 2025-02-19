@@ -1,55 +1,75 @@
 import pandas as pd
+from openpyxl import Workbook, load_workbook
 import os
+import zipfile
+
 from functions.parse_text import parse_ocr_text
 from functions.classify_document import classify_document
-from functions.handle_documents import handle_document
-from functions.expand_results import expand_results
+from functions.test_chobon_extract import extract_info_from_chobon
+from functions.test_dungbon_extract import extract_info_from_dungbon
+from functions.test_geonbojakyeock_extract import extract_info_from_geonbojakyeock
+from functions.test_grade_extract import extract_info_from_grade
+from functions.test_graduation_extract import extract_info_from_graduation
+from functions.test_nps_extract import extract_info_from_nps
+from functions.test_toeic_extract import extract_info_from_toeic
+from functions.test_toss_extract import extract_info_from_toss
 
 # 🔹 [1] Input 데이터 로드
-input_path = "./data/input.xlsx"
+input_path = "./input.xlsx"
 df_input = pd.read_excel(input_path)
 
-# 🔹 [2] Output 데이터 프레임 초기화
-output_columns = [
-    "수험번호", "이름",  # 기본
-    "등본_생년월일6자리", "등본_확인번호", "등본_발급날짜",  # 등본 O, 컬럼 O, 분류 O
-    "초본_확인인번호", "초본_발급날짜","초본_생년월일6자리", # 초본 O, 컬럼 O, 분류 O
-    "건강보험자격득실_확인번호_건보", "건강보험자격득실_확인번호_정부24", "건강보험자격득실_발급일", # 건강보험자격득실 O 컬럼 O, 분류 O
-    "국민연금가입자증명_확인번호_국민연금","국민연금가입자증명_확인번호_정부24", "국민연금가입자증명_발급일",  # 국민연금가입자증명 O  컬럼 O  분류 O
-    "토익_수험번호", "토익_발급번호", "토익_생년월일",  # 토익 O 컬럼 O 분류 O
-    "토스_수험번호", "토스_발급번호", "토스_생년월일",  # 토스 O 컬럼 O 분류 O
-    "성적증명_대학교","성적증명_문서확인번호", "성적증명_추정발급일",  # 성적증명서 O 컬럼 O 
-    "졸업증명_대학교","졸업증명_문서확인번호","졸업증명_추정발급일"  # 졸업증명서 O 컬럼 O
-]
-df_output = pd.DataFrame(columns=output_columns)
+# 🔹 [2] Output Excel 파일 설정
+output_path = "./ocr_extract_output.xlsx"
 
-# 🔹 [3] 각 행을 순회하며 OCR 데이터 처리
-for _, row in df_input.iterrows():
+# 🔹 [3] 워크북 로드 (있으면 열기, 없으면 새로 생성)
+if os.path.exists(output_path):
+    try:
+        book = load_workbook(output_path)
+    except zipfile.BadZipFile:
+        print("손상된 Excel 파일입니다. 새 파일을 생성합니다.")
+        book = Workbook()
+else:
+    print("Excel 파일이 없습니다. 새 파일을 생성합니다.")
+    book = Workbook()
+
+# 🔹 [4] 각 행을 순회하며 OCR 데이터 처리
+for index, row in df_input.iterrows():
     exam_number, name, ocr_text = row["수험번호"], row["이름"], row["ocr_text"]
+    parsed_text = parse_ocr_text(ocr_text)
+    
 
-    # 개행 및 공백 제거 후 파싱. output : 배열(개행 및 공백이 제거된 각 페이지 OCR결과과)
-    parsed_text = parse_ocr_text(ocr_text) 
-
-    # 결과 저장을 위한 딕셔너리 (배열 형태)
-    final_result = {col: [] for col in output_columns}
-    final_result["수험번호"].append(exam_number)
-    final_result["이름"].append(name)
-
-    # 🔹 [4] OCR 텍스트 순회하며 파일 분류 및 데이터 추출
-    for t in parsed_text:
-      
-        doc_type = classify_document(t)  # 문서 유형 분류
-        print("실제카테고리 : ",row['실제카테고리'],"   vs  분류카테고리 : ", doc_type)
+    for text in parsed_text:
+        doc_type = classify_document(text)
+        
         if doc_type:
-            result = handle_document(doc_type, name, t)  # 해당 문서 처리
-            for key, value in result.items():
-                final_result[key].extend(value)  # 결과 병합
+            data_extractor = {
+                '등본': extract_info_from_dungbon,
+                '초본': extract_info_from_chobon,
+                '건강보험자격득실': extract_info_from_geonbojakyeock,
+                '국민연금가입자증명': extract_info_from_nps,
+                '토익': extract_info_from_toeic,
+                '토스': extract_info_from_toss,
+                '성적증명서': extract_info_from_grade,
+                '졸업증명서': extract_info_from_graduation
+            }.get(doc_type)
 
-    # 🔹 [5] 결과를 행 단위로 확장 후 저장
-    expanded_rows = expand_results(final_result)
-    df_output = pd.concat([df_output, expanded_rows], ignore_index=True)
+            if data_extractor:
+                extracted_data = data_extractor(name, text)
+                print(extracted_data)
+                for key, values in extracted_data.items():
+                    row[key] = ', '.join(values)
 
-# 🔹 [6] 최종 output 저장
-output_path = "./data/output2.xlsx"
-df_output.to_excel(output_path, index=False)
+            # 🔹 시트 추가 또는 업데이트
+            sheet_name = doc_type
+            if sheet_name in book.sheetnames:
+                sheet = book[sheet_name]
+            else:
+                sheet = book.create_sheet(title=sheet_name)
+                sheet.append(df_input.columns.tolist())  # 헤더 추가 (한 번만 추가)
+
+            sheet.append(row.tolist())  # 🔥 해결: numpy.ndarray → list 변환
+
+# 🔹 저장하고 파일 닫기
+book.save(output_path)
+book.close()
 print("✅ 최종 데이터 저장 완료!")

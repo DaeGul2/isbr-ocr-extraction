@@ -27,6 +27,8 @@ def classify_document(text):
     
 
     if "toeic" in text: 
+        if "성적" in text and ("학점" in text or "문서확인번호" in text or "transcript" in text):
+            return "성적증명서"
         if "peakin" in text:
             return "토스"
         else:
@@ -37,7 +39,7 @@ def classify_document(text):
         return "성적증명서"
     
 
-    if "졸업" in text :
+    if "졸업" in text or "학위수여" in text:
         return "졸업증명서"
     
     

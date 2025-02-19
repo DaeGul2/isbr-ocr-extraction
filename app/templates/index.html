@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload and OCR</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            var socket = io('/progress');
+            
+            socket.on('file_uploaded', function(data) {
+                socket.emit('start_ocr', {'file_path': data.file_path});
+            });
+            
+            socket.on('ocr_done', function(data) {
+                var div = document.createElement('div');
+                div.textContent = data.text;
+                document.body.appendChild(div);
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Upload file for OCR</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html>
