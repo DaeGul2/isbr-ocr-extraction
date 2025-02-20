@@ -19,7 +19,7 @@ input_path = "./input.xlsx"
 df_input = pd.read_excel(input_path)
 
 # 🔹 [2] Output Excel 파일 설정
-output_path = "./ocr_extract_output.xlsx"
+output_path = "./test_output.xlsx"
 
 # 🔹 [3] 워크북 로드 (있으면 열기, 없으면 새로 생성)
 if os.path.exists(output_path):
@@ -37,7 +37,6 @@ for index, row in df_input.iterrows():
     exam_number, name, ocr_text = row["수험번호"], row["이름"], row["ocr_text"]
     parsed_text = parse_ocr_text(ocr_text)
     
-
     for text in parsed_text:
         doc_type = classify_document(text)
         
@@ -55,19 +54,19 @@ for index, row in df_input.iterrows():
 
             if data_extractor:
                 extracted_data = data_extractor(name, text)
-                print(extracted_data)
-                for key, values in extracted_data.items():
-                    row[key] = ', '.join(values)
+                
+                # 🔹 시트 이름 = 문서 유형 (doc_type)
+                sheet_name = doc_type
+                if sheet_name in book.sheetnames:
+                    sheet = book[sheet_name]
+                else:
+                    sheet = book.create_sheet(title=sheet_name)
+                    # 🔹 헤더 추가 (첫 번째 행에 컬럼명 추가)
+                    sheet.append(["수험번호", "이름"] + list(extracted_data.keys()))
 
-            # 🔹 시트 추가 또는 업데이트
-            sheet_name = doc_type
-            if sheet_name in book.sheetnames:
-                sheet = book[sheet_name]
-            else:
-                sheet = book.create_sheet(title=sheet_name)
-                sheet.append(df_input.columns.tolist())  # 헤더 추가 (한 번만 추가)
-
-            sheet.append(row.tolist())  # 🔥 해결: numpy.ndarray → list 변환
+                # 🔹 데이터 추가
+                row_data = [exam_number, name] + [', '.join(values) for values in extracted_data.values()]
+                sheet.append(row_data)
 
 # 🔹 저장하고 파일 닫기
 book.save(output_path)

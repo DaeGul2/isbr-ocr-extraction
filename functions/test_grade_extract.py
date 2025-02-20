@@ -61,10 +61,12 @@ def extract_info_from_grade(name, text):
     성적증명서에서 문서확인번호와 발급일을 추출
     """
     result = {
+        "검출_원본":[],
         "성적증명_문서확인번호": [],
         "성적증명_추정발급일": [],
         "성적증명_대학교": []
     }
+    result["검출_원본"].append(text)
 
     # 🔹 'internet' 포함 여부는 소문자로 변환해서 체크
     check_text = text.lower()

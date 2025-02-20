@@ -76,11 +76,14 @@ def extract_info_from_dungbon(name, text):
     등본에서 필요한 정보 (자격번호, 발급날짜, 주민등록번호) 추출
     """
     result = {
+        "검출_원본": [],
         "이름": name,
         "등본_확인번호": [],
         "등본_발급날짜": [],
         "등본_생년월일6자리": []
     }
+
+    result["검출_원본"].append(text)
 
     text = text.replace(" ", "")  # OCR 오류 방지
 

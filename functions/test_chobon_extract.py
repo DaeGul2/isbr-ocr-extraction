@@ -64,11 +64,12 @@ def extract_info_from_chobon(name, text):
     초본에서 필요한 정보 (자격번호, 발급날짜, 주민등록번호) 추출
     """
     result = {
-        
+        "검출_원본": [],
         "초본_확인번호": [],
         "초본_발급날짜": [],
         "초본_생년월일6자리": []
     }
+    result["검출_원본"].append(text)
 
     text = text.replace(" ", "")  # OCR 오류 방지
     text = text.replace("--","-")

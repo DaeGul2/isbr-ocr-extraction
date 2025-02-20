@@ -62,11 +62,12 @@ def extract_info_from_graduation(name, text):
     졸업증명서에서 문서확인번호와 발급일을 추출
     """
     result = {
+        "검출_원본":[],
         "졸업증명_문서확인번호": [],
         "졸업증명_추정발급일": [],
         "졸업증명_대학교": []
     }
-
+    result["검출_원본"].append(text)
     # 🔹 'internet' 포함 여부는 소문자로 변환해서 체크
     check_text = text.lower()
 

@@ -39,11 +39,12 @@ def extract_info_from_toss(name, text):
     토스 성적표에서 필요한 정보 (수험번호, 발급번호, 생년월일) 추출
     """
     result = {
-        
+        "검출_원본":[],
         "토스_수험번호": [],
         "토스_발급번호": [],
         "토스_생년월일": []
     }
+    result["검출_원본"].append(text)
 
     text = text.replace(" ", "").lower()  # OCR 오류 방지 & 소문자로 변환
     text = text.replace("--","-")
