@@ -32,7 +32,10 @@ else:
     print("Excel 파일이 없습니다. 새 파일을 생성합니다.")
     book = Workbook()
 
-# 🔹 [4] 각 행을 순회하며 OCR 데이터 처리
+# 🔹 [4] 시트별 데이터 저장을 위한 딕셔너리
+sheets_data = {}
+
+# 🔹 [5] 각 행을 순회하며 OCR 데이터 처리
 for index, row in df_input.iterrows():
     exam_number, name, ocr_text = row["수험번호"], row["이름"], row["ocr_text"]
     parsed_text = parse_ocr_text(ocr_text)
@@ -57,18 +60,38 @@ for index, row in df_input.iterrows():
                 
                 # 🔹 시트 이름 = 문서 유형 (doc_type)
                 sheet_name = doc_type
-                if sheet_name in book.sheetnames:
-                    sheet = book[sheet_name]
-                else:
-                    sheet = book.create_sheet(title=sheet_name)
-                    # 🔹 헤더 추가 (첫 번째 행에 컬럼명 추가)
-                    sheet.append(["수험번호", "이름"] + list(extracted_data.keys()))
 
-                # 🔹 데이터 추가
-                row_data = [exam_number, name] + [', '.join(values) for values in extracted_data.values()]
-                sheet.append(row_data)
+                # 🔹 시트별 데이터 저장을 위한 리스트 생성 (없으면 새로 만듦)
+                if sheet_name not in sheets_data:
+                    sheets_data[sheet_name] = []
 
-# 🔹 저장하고 파일 닫기
+                # 🔹 행 데이터 구성 (검출_원본 제외)
+                filtered_data = {k: v for k, v in extracted_data.items() if k != "검출_원본"}
+                row_data = [exam_number, name] + [', '.join(values) for values in filtered_data.values()]
+
+                # 🔹 해당 시트의 데이터 리스트에 추가
+                sheets_data[sheet_name].append(row_data)
+
+# 🔹 [6] 중복 제거 및 데이터 엑셀에 저장
+for sheet_name, data in sheets_data.items():
+    # 🔹 데이터프레임 변환 (중복 제거를 위해)
+    df = pd.DataFrame(data, columns=["수험번호", "이름"] + list(filtered_data.keys()))
+
+    # 🔹 '검출_원본'을 제외한 나머지 컬럼값이 중복되는 행 제거 (첫 번째 값만 유지)
+    df_deduplicated = df.drop_duplicates(subset=df.columns[2:], keep="first")
+
+    # 🔹 시트가 없으면 생성
+    if sheet_name in book.sheetnames:
+        sheet = book[sheet_name]
+    else:
+        sheet = book.create_sheet(title=sheet_name)
+        sheet.append(df_deduplicated.columns.tolist())  # 🔹 헤더 추가
+
+    # 🔹 중복 제거된 데이터 저장
+    for row in df_deduplicated.itertuples(index=False, name=None):
+        sheet.append(row)
+
+# 🔹 [7] 저장하고 파일 닫기
 book.save(output_path)
 book.close()
-print("✅ 최종 데이터 저장 완료!")
+print("✅ 최종 데이터 저장 완료! (중복 제거 포함)")

@@ -66,18 +66,21 @@ def extract_info_from_geonbojakyeock(name, text):
     result["검출_원본"].append(text)
     text = text.lower().replace("--", "-")  # 텍스트 정제
 
-    # 🔹 정부24 확인번호 (G + 15자리 숫자)
+    # 🔹 정부24 확인번호 (4-4-4-4 형식)
     pattern_gov24 = r"\d{4}-\d{4}-\d{4}-\d{4}"
     match_gov24 = re.findall(pattern_gov24, text)
     if match_gov24:
         result["건강보험자격득실_확인번호_정부24"].append(match_gov24[0])  # 첫 번째 값만 저장
 
     
-    # 🔹 건보 확인번호 (4-4-4-4 형식)
-    pattern_geonbo = r"g\d{18}"
-    match_geonbo= re.findall(pattern_geonbo, text)
-    if match_geonbo:
-        result["건강보험자격득실_확인번호_건보"].append(match_geonbo[0].upper())  # 첫 번째 값만 저장
+    
+     # 🔹 건보 확인번호 (G + 18자리 ~ G + 15자리까지 순차적으로 검색)
+    for length in range(18, 14, -1):  # 18 → 17 → 16 → 15
+        pattern_geonbo = rf"g\d{{{length}}}"
+        match_geonbo = re.findall(pattern_geonbo, text)
+        if match_geonbo:
+            result["건강보험자격득실_확인번호_건보"].append(match_geonbo[0].upper())  # 첫 번째 값 저장
+            break  # ✅ 찾으면 반복 종료
 
     # 🔹 발급 날짜 (가장 최신 날짜만 저장)
     latest_issue_date = extract_latest_issue_date(text)
