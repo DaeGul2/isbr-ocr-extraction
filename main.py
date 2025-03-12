@@ -15,11 +15,11 @@ from functions.test_toeic_extract import extract_info_from_toeic
 from functions.test_toss_extract import extract_info_from_toss
 
 # 🔹 [1] Input 데이터 로드
-input_path = "./input.xlsx"
+input_path = "./마사회_2025_신입_ocr_results.xlsx"
 df_input = pd.read_excel(input_path)
 
 # 🔹 [2] Output Excel 파일 설정
-output_path = "./test_output.xlsx"
+output_path = "./마사회_2025_신입_output.xlsx"
 
 # 🔹 [3] 워크북 로드 (있으면 열기, 없으면 새로 생성)
 if os.path.exists(output_path):
@@ -72,26 +72,31 @@ for index, row in df_input.iterrows():
                 # 🔹 해당 시트의 데이터 리스트에 추가
                 sheets_data[sheet_name].append(row_data)
 
-# 🔹 [6] 중복 제거 및 데이터 엑셀에 저장
+# 🔹 [6] 중복 제거 없이 결과 저장
 for sheet_name, data in sheets_data.items():
-    # 🔹 데이터프레임 변환 (중복 제거를 위해)
-    df = pd.DataFrame(data, columns=["수험번호", "이름"] + list(filtered_data.keys()))
+    # 🔹 가장 긴 행의 길이를 기준으로 컬럼 개수 조정
+    max_cols = max(len(row) for row in data)
 
-    # 🔹 '검출_원본'을 제외한 나머지 컬럼값이 중복되는 행 제거 (첫 번째 값만 유지)
-    df_deduplicated = df.drop_duplicates(subset=df.columns[2:], keep="first")
+    # 🔹 컬럼 리스트 동적으로 생성
+    default_columns = ["수험번호", "이름"]
+    extra_columns = [f"항목_{i+1}" for i in range(max_cols - len(default_columns))]
+    column_names = default_columns + extra_columns
+
+    # 🔹 데이터프레임 변환
+    df = pd.DataFrame(data, columns=column_names)
 
     # 🔹 시트가 없으면 생성
     if sheet_name in book.sheetnames:
         sheet = book[sheet_name]
     else:
         sheet = book.create_sheet(title=sheet_name)
-        sheet.append(df_deduplicated.columns.tolist())  # 🔹 헤더 추가
+        sheet.append(df.columns.tolist())  # 🔹 헤더 추가
 
-    # 🔹 중복 제거된 데이터 저장
-    for row in df_deduplicated.itertuples(index=False, name=None):
+    # 🔹 데이터 저장
+    for row in df.itertuples(index=False, name=None):
         sheet.append(row)
 
 # 🔹 [7] 저장하고 파일 닫기
 book.save(output_path)
 book.close()
-print("✅ 최종 데이터 저장 완료! (중복 제거 포함)")
+print("✅ OCR 분석 결과 저장 완료! (중복 제거 없음)")
