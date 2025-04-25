@@ -15,11 +15,11 @@ from functions.test_toeic_extract import extract_info_from_toeic
 from functions.test_toss_extract import extract_info_from_toss
 
 # 🔹 [1] Input 데이터 로드
-input_path = "./ocr_results.xlsx"
+input_path = "./02_행정직_6급.xlsx"
 df_input = pd.read_excel(input_path)
 
 # 🔹 [2] Output Excel 파일 설정
-output_path = "./KIND_2025_output.xlsx"
+output_path = "./02_행정직_6급.xlsx"
 
 # 🔹 [3] 워크북 로드 (있으면 열기, 없으면 새로 생성)
 if os.path.exists(output_path):
